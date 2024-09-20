@@ -180,11 +180,13 @@ def ffrate_plot(beg_date="earliest", end_date="most_recent",
     output_file(filename, title=fig_title)
 
     # Format the tooltip
-    tooltips = [('Date', '@Date{%Y-%m-%d}'),
-                ('Effective rate', '@ffr_effective{0.00}%'),
-                ('Target rate', '@ffr_targ{0.00}%'),
-                ('Target min', '@ffr_targ_low{0.00}%'),
-                ('Target max', '@ffr_targ_high{0.00}%')]
+    tooltips = [
+        ('Date', '@Date{%Y-%m-%d}'),
+        ('Effective rate', '@ffr_effective{0.00}%'),
+        ('Target rate', '@ffr_targ{0.00}%'),
+        ('Target min', '@ffr_targ_low{0.00}%'),
+        ('Target max', '@ffr_targ_high{0.00}%')
+    ]
 
     # Solve for minimum and maximum PAYEMS/Peak values in monthly main display
     # window in order to set the appropriate xrange and yrange
@@ -199,40 +201,44 @@ def ffrate_plot(beg_date="earliest", end_date="most_recent",
     # datarange_dates = int(end_date2 - beg_date)
     fig_rate_buffer_pct = 0.10
     fig_date_buffer_pct = 0.05
-    fig = figure(plot_height=500,
-                 plot_width=1000,
-                 x_axis_label='Date',
-                 y_axis_label='federal funds rate',
-                 y_range=(min_rate - fig_rate_buffer_pct * datarange_rates,
-                          max_rate + fig_rate_buffer_pct * datarange_rates),
-                 # x_range=((beg_date - fig_date_buffer_pct * datarange_dates),
-                 #          (end_date + fig_date_buffer_pct * datarange_dates)),
-                 tools=['save', 'zoom_in', 'zoom_out', 'box_zoom',
-                        'pan', 'undo', 'redo', 'reset', 'help'],
-                 toolbar_location='left')
+    fig = figure(
+        height=500,
+        width=1000,
+        x_axis_label='Date',
+        y_axis_label='federal funds rate',
+        y_range=(
+            min_rate - fig_rate_buffer_pct * datarange_rates,
+            max_rate + fig_rate_buffer_pct * datarange_rates
+        ),
+        # x_range=((beg_date - fig_date_buffer_pct * datarange_dates),
+        #          (end_date + fig_date_buffer_pct * datarange_dates)),
+        tools=['save', 'zoom_in', 'zoom_out', 'box_zoom',
+               'pan', 'undo', 'redo', 'reset', 'help'],
+        toolbar_location='left'
+    )
     fig.title.text_font_size = '18pt'
     fig.toolbar.logo = None
     # Format dates for axis representation and rotate pi/4
     fig.xaxis.formatter=DatetimeTickFormatter(
-        days=['%Y-%m-%d'],
-        months=['%Y-%m-%d'],
-        years=['%Y-%m-%d']
+        days='%Y-%m-%d',
+        months='%Y-%m-%d',
+        years='%Y-%m-%d'
     )
     fig.xaxis.major_label_orientation = np.pi / 4
 
     ffr_effective = fig.line(
         x='Date', y='ffr_effective', source=ffrates_cds, color='black',
-        line_width=2, alpha=0.7, muted_alpha=0.15
+        line_width=2, alpha=0.7, muted_alpha=0.1
     )
     ffr_targ = fig.line(
         x='Date', y='ffr_targ', source=ffrates_cds, color='red', line_width=2,
-        alpha=0.7, muted_alpha=0.15
+        alpha=0.7, muted_alpha=0.1
     )
     ffr_range = fig.varea(
         x='Date', y1='ffr_targ_low', y2='ffr_targ_high', source=ffrates_cds,
-        color='red', alpha=0.3, muted_alpha=0.15
+        color='red', alpha=0.3, muted_alpha=0.1
     )
-
+    recession_bar_list = []
     if recession_bars:
         # Create recession bars
         recession_data_length = len(recession_df['Peak'])
@@ -247,8 +253,10 @@ def ffrate_plot(beg_date="earliest", end_date="most_recent",
                     y=[-100, -100, 2 * max_rate, 2 * max_rate],
                     fill_color='gray',
                     fill_alpha=0.3,
+                    muted_alpha=0.01,
                     line_width=0
                 )
+                recession_bar_list.append(rec_bar)
 
             # Recesssions completely within begin date and end date
             elif (peak_day >= beg_date and trough_day <= end_date):
@@ -257,8 +265,10 @@ def ffrate_plot(beg_date="earliest", end_date="most_recent",
                     y=[-100, -100, 2 * max_rate, 2 * max_rate],
                     fill_color='gray',
                     fill_alpha=0.3,
+                    muted_alpha=0.01,
                     line_width=0
                 )
+                recession_bar_list.append(rec_bar)
 
             # Recession that started after begin date but end after end date
             elif (peak_day >= beg_date and peak_day <= end_date and
@@ -268,22 +278,31 @@ def ffrate_plot(beg_date="earliest", end_date="most_recent",
                     y=[-100, -100, 2 * max_rate, 2 * max_rate],
                     fill_color='gray',
                     fill_alpha=0.3,
+                    muted_alpha=0.01,
                     line_width=0
                 )
+                recession_bar_list.append(rec_bar)
 
         # Add legend
-        legend = Legend(items=[("effective rate", [ffr_effective]),
-                            ("target rate", [ffr_targ]),
-                            ("target range", [ffr_range]),
-                            ("Recession", [rec_bar])],
-                        location="center")
-
+        legend = Legend(
+            items=[
+                ("effective rate", [ffr_effective]),
+                ("target rate", [ffr_targ]),
+                ("target range", [ffr_range]),
+                ("Recession", recession_bar_list)
+            ],
+            location="center"
+        )
     else:
         # Add legend
-        legend = Legend(items=[("effective rate", [ffr_effective]),
-                            ("target rate", [ffr_targ]),
-                            ("target range", [ffr_range])],
-                        location="center")
+        legend = Legend(
+            items=[
+                ("effective rate", [ffr_effective]),
+                ("target rate", [ffr_targ]),
+                ("target range", [ffr_range])
+            ],
+            location="center"
+        )
 
     fig.add_layout(legend, 'right')
 
@@ -304,8 +323,13 @@ def ffrate_plot(beg_date="earliest", end_date="most_recent",
     fig.legend.click_policy = 'mute'
 
     # Add the HoverTool to the figure
-    fig.add_tools(HoverTool(tooltips=tooltips, toggleable=False,
-                            formatters={'@Date': 'datetime'}))
+    fig.add_tools(
+        HoverTool(
+            renderers=[ffr_effective, ffr_targ, ffr_range],
+            tooltips=tooltips,
+            formatters={'@Date': 'datetime'}
+        )
+    )
 
     if html_show:
         show(fig)
